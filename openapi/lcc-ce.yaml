@@ -1,0 +1,1537 @@
+openapi: 3.0.0
+info:
+  title: 'LCC CE'
+  description: "Lunar Control Center is a security-first Mobile Device Management system used for managing Android-based devices. It is designed to perform key functions helping teams control and support devices, as well as executing day-to-day operations.\n# Errors\nThe API uses standard HTTP status codes to indicate the success or failure of the API call. The body of the response will be JSON in the following format:\n```\n{\n    \"serverTime\": \"2025-01-13 10:22:18\",\n    \"action\": \"/api/v1/config\",\n    \"code\": 401,\n    \"response\": \"Auth token is not valid or token has no access permission for this action\"\n}\n```\n# Versioning\nThe API is usually changed in each release of the LCC CE, so API calls are versioned to ensure that clients don't break.\nCurrent API version is `v1`.\n# Authentication\nAuthentication is handled client side. The client has to send authentication details to the entrypoint, such as `POST /api/v1/config`. These are sent as `X-Auth-Token` header with the token string.\n"
+  termsOfService: 'https://lunr.tech/contact-us/'
+  contact:
+    email: info@lunr.tech
+  version: 1.0.0
+  x-logo:
+    url: 'https://lunr.tech/wp-content/uploads/2024/05/logo.png'
+    altText: Lunr
+    href: 'https://lunr.tech'
+paths:
+  /api/v1/actions:
+    get:
+      tags:
+        - Synchronization
+      summary: Actions
+      description: 'The Actions API allows connected devices to receive and execute various commands from the management platform. These commands can include configuration changes, system updates, diagnostics, remote operations, and other administrative tasks. This ensures seamless communication between the device and the platform, enabling efficient remote management and automation.'
+      operationId: get_actions
+      parameters:
+        -
+          name: deviceUid
+          in: query
+          description: 'A unique identifier for a device. On Android, a device can be uniquely identified using various identifiers, such as the IMEI, Android ID, or Advertising ID.'
+          required: true
+          schema:
+            type: string
+            example: 1c310dab5cb53942
+        -
+          name: deviceModel
+          in: query
+          description: 'A unique identifier for a specific type of device.'
+          required: true
+          schema:
+            type: string
+            example: b1
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceModel.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 400
+                response:
+                  deviceModel: ['Device Model cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '403':
+          description: 'The device has not been enrolled'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 403
+                response: 'This device has not been enrolled. Please enroll it first.'
+        '200':
+          description: 'List of managed actions from MP.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  serverTime: { description: "The server's current timestamp.", type: string, format: date-time, example: '2025-01-13 10:54:29' }
+                  action: { description: 'The action attempted by the client.', type: string, example: /api/v1/actions }
+                  code: { $ref: '#/components/schemas/ApiResponseCode' }
+                  response: { description: 'List of managed actions.', type: array, items: { $ref: '#/components/schemas/ApiAction' } }
+                type: object
+      security:
+        -
+          ApiKey: []
+  /api/v1/bug/report:
+    post:
+      tags:
+        - Service
+      summary: 'Bug Report'
+      description: 'The Bug Report API allows a device to send bug information, including error messages and optional file attachments, to the management platform. This helps in diagnosing issues, improving system stability, and enhancing overall device performance.'
+      operationId: post_bug_report
+      requestBody:
+        description: 'Multipart payload containing the deviceModel, deviceUid, message, and an optional file.'
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - deviceUid
+                - deviceModel
+                - message
+              properties:
+                deviceUid:
+                  description: 'A unique identifier for a device. On Android, a device can be uniquely identified using various identifiers, such as the IMEI, Android ID, or Advertising ID.'
+                  type: string
+                  example: 1c310dab5cb53942
+                deviceModel:
+                  description: 'A unique identifier for a specific type of device.'
+                  type: string
+                  example: b1
+                message:
+                  description: 'Bug Report'
+                  type: string
+                  example: 'App crashes when opening settings.'
+                file:
+                  description: 'Optional file attachment (e.g., logs, screenshots).'
+                  type: string
+                  format: binary
+              type: object
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceUid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 400
+                response:
+                  deviceUid: ['Device Uid cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '403':
+          description: 'The device has not been enrolled'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 403
+                response: 'This device has not been enrolled. Please enroll it first.'
+        '200':
+          description: 'The policy report has been successfully published.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/bug/report
+                code: 200
+                response: OK
+      security:
+        -
+          ApiKey: []
+  /api/v1/config:
+    get:
+      tags:
+        - Synchronization
+      summary: Configuration
+      description: 'The Config API allows a connected device to retrieve its complete configuration, including installed applications, software details, and hardware settings. This ensures the device stays aligned with management platform policies and maintains optimal functionality.'
+      operationId: get_config
+      parameters:
+        -
+          name: deviceUid
+          in: query
+          description: 'A unique identifier for a device. On Android, a device can be uniquely identified using various identifiers, such as the IMEI, Android ID, or Advertising ID.'
+          required: true
+          schema:
+            type: string
+            example: 1c310dab5cb53942
+        -
+          name: deviceModel
+          in: query
+          description: 'A unique identifier for a specific type of device.'
+          required: true
+          schema:
+            type: string
+            example: b1
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/config
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceModel.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 400
+                response:
+                  deviceModel: ['Device Model cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/config
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '403':
+          description: 'The device has not been enrolled'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/config
+                code: 403
+                response: 'This device has not been enrolled. Please enroll it first.'
+        '200':
+          description: 'The device configuration from MP.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  serverTime: { description: "The server's current timestamp.", type: string, format: date-time, example: '2025-01-13 10:54:29' }
+                  action: { description: 'The action attempted by the client.', type: string, example: /api/v1/config }
+                  code: { $ref: '#/components/schemas/ApiResponseCode' }
+                  response: { $ref: '#/components/schemas/DeviceConfiguration' }
+                type: object
+      security:
+        -
+          ApiKey: []
+  /api/v1/enroll:
+    post:
+      tags:
+        - Synchronization
+      summary: Enrollment
+      description: 'The Enrollment API enables a device to register with the Management Platform and obtain its initial configuration. This process ensures the device is properly set up with the necessary settings, applications, and policies for seamless integration and management.'
+      operationId: post_enrollment
+      requestBody:
+        description: 'JSON payload containing deviceUid and deviceModel.'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Device'
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/enroll
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceModel.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/actions
+                code: 400
+                response:
+                  deviceModel: ['Device Model cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/enroll
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '200':
+          description: 'The device configuration from MP.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  serverTime: { description: "The server's current timestamp.", type: string, format: date-time, example: '2025-01-13 10:54:29' }
+                  action: { description: 'The action attempted by the client.', type: string, example: /api/v1/enroll }
+                  code: { $ref: '#/components/schemas/ApiResponseCode' }
+                  response: { $ref: '#/components/schemas/DeviceCommunicationSecret' }
+                type: object
+  /api/v1/os:
+    get:
+      tags:
+        - Updates
+      summary: Os
+      description: 'The OS API allows a device to retrieve the next available OS version update from the Management Platform. This ensures the device stays up to date with the latest features, security patches, and performance improvements, maintaining optimal functionality and compliance with platform policies.'
+      operationId: get_os
+      parameters:
+        -
+          name: deviceModel
+          in: query
+          description: 'A unique identifier for a specific type of device.'
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+            example: b1
+          example: b1
+        -
+          name: version
+          in: query
+          description: 'The requested OS version.'
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+            example: 1.1.4-20240821-B1
+          example: 1.1.4-20240821-B1
+        -
+          name: currentOsVersion
+          in: query
+          description: "The current OS version installed on the device. Must follow the pattern: 'X.Y.Z-YYYYMMDD-XXXX'."
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{1,3}\.\d{1,3}\.\d{1,3}-\d{8}-.[a-zA-Z0-9-]{1,}'
+            example: 1.1.2-20230405-B1
+          example: 1.1.2-20230405-B1
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/os
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/os
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceModel.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/os
+                code: 400
+                response:
+                  deviceModel: ['Device Model cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/os
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '404':
+          description: 'The build version for the requested OS is not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/os
+                code: 404
+                response: 'Not found'
+        '200':
+          description: 'Success response with Os build payload.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  serverTime: { description: "The server's current timestamp.", type: string, format: date-time, example: '2025-01-13 10:54:29' }
+                  action: { description: 'The action attempted by the client.', type: string, example: /api/v1/os }
+                  code: { $ref: '#/components/schemas/ApiResponseCode' }
+                  response: { $ref: '#/components/schemas/OsResponse' }
+                type: object
+      security:
+        -
+          ApiKey: []
+  /api/v1/policy/report:
+    put:
+      tags:
+        - Service
+      summary: 'Policy Report'
+      description: ''
+      operationId: put_policy_report
+      requestBody:
+        description: 'JSON payload containing the deviceModel, deviceUid and report object.'
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - deviceModel
+                - deviceUid
+                - report
+              properties:
+                deviceUid:
+                  description: 'A unique identifier for a device. On Android, a device can be uniquely identified using various identifiers, such as the IMEI, Android ID, or Advertising ID.'
+                  type: string
+                  example: 1c310dab5cb53942
+                deviceModel:
+                  description: 'A unique identifier for a specific type of device.'
+                  type: string
+                  example: b1
+                report:
+                  $ref: '#/components/schemas/PolicyReport'
+              type: object
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/policy/report
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: genericBaseApiResponse
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty deviceModel.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/policy/report
+                code: 400
+                response:
+                  deviceModel: ['Device Model cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/policy/report
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '403':
+          description: 'The device has not been enrolled'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/config
+                code: 403
+                response: 'This device has not been enrolled. Please enroll it first.'
+        '200':
+          description: 'The policy report has been successfully published.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/policy/report
+                code: 200
+                response: OK
+      security:
+        -
+          ApiKey: []
+  /api/v1/sensors/register:
+    post:
+      tags:
+        - Sensors
+      summary: Register
+      description: 'Registers a new device sensor by providing sensor details such as name, unique ID, device class, icon, unit of measurement, state class, entity category, and initial state.'
+      operationId: post_register_sensors
+      requestBody:
+        description: 'JSON payload containing an array of sensors to be registered.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Sensor'
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/register
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/register
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty state.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/register
+                code: 400
+                response:
+                  state: ['State cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/register
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '200':
+          description: 'The device sensors has been successfully registered.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/register
+                code: 200
+                response: OK
+      security:
+        -
+          ApiKey: []
+  /api/v1/sensors/state:
+    post:
+      tags:
+        - Sensors
+      summary: State
+      description: 'Update state of a device sensor'
+      operationId: post_state_sensors
+      requestBody:
+        description: 'JSON payload containing an array of sensors states.'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SensorState'
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/state
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/state
+                code: 500
+                response: 'Unknown error/response status'
+        '400':
+          description: 'Invalid input. For example, an improperly formatted or empty state.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/state
+                code: 400
+                response:
+                  state: ['State cannot be blank.']
+        '401':
+          description: 'Authentication token is not valid.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/state
+                code: 401
+                response: 'Auth token is not valid or token has no access permission for this action'
+        '200':
+          description: 'The device sensors states has been successfully updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/sensors/state
+                code: 200
+                response:
+                  living_room_temperature: { success: true, is_disabled: true }
+      security:
+        -
+          ApiKey: []
+  /api/v1/ping:
+    get:
+      tags:
+        - Service
+      summary: Ping
+      description: 'A simple ping-pong action used to check API availability and server health status.'
+      operationId: get_ping
+      responses:
+        '503':
+          description: 'Service unavailable due to server maintenance.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/ping
+                code: 503
+                response: 'API server is on maintenance. Try again later please'
+        '500':
+          description: 'Internal server error. An unknown error occurred.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: genericBaseApiResponse
+                code: 500
+                response: 'Unknown error/response status'
+        '200':
+          description: 'Successful operation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+              example:
+                serverTime: '2025-01-13 10:54:29'
+                action: /api/v1/ping
+                code: 200
+                response: Pong
+components:
+  schemas:
+    Sensor:
+      required:
+        - name
+        - state
+        - type
+        - unique_id
+      properties:
+        attributes:
+          description: 'Attributes to attach to the sensor'
+          type: object
+        device_class:
+          description: "One of the valid device classes. Some device classes are allowed for `binary_sensor` and some for `sensor`. - **Binary Sensor Device Classes**: `battery`, `battery_charging`, `carbon_monoxide`, `cold`, `connectivity`, `door`, `garage_door`, `gas`, `heat`, `light`, `lock`, `moisture`, `motion`, `moving`, `occupancy`, `opening`, `plug`, `power`, `presence`, `problem`, `running`, `safety`, `smoke`, `sound`, `tamper`, `update`, `vibration`, `window`. - **Sensor Device Classes**: `apparent_power`, `aqi`, `area`, `atmospheric_pressure`, `battery`, `blood_glucose_concentration`, `carbon_dioxide`, `carbon_monoxide`, `current`, `data_rate`, `data_size`, `date`, `distance`, `duration`, `energy`, `energy_distance`, `energy_storage`, `enum`, `frequency`, `gas`, `humidity`, `illuminance`, `irradiance`, `moisture`, `monetary`, `nitrogen_dioxide`, `nitrogen_monoxide`, `nitrous_oxide`, `ozone`, `ph`, `pm1`, `pm25`, `pm10`, `power_factor`, `power`, `precipitation`, `precipitation_intensity`, `pressure`, `reactive_power`, `signal_strength`, `sound_pressure`, `speed`, `sulphur_dioxide`, `temperature`, `timestamp`, `volatile_organic_compounds`, `volatile_organic_compounds_parts`, `voltage`, `volume`, `volume_flow_rate`, `volume_storage`, `water`, `weight`, `wind_direction`, `wind_speed`.\n"
+          type: string
+          enum:
+            - battery
+            - battery_charging
+            - carbon_monoxide
+            - cold
+            - connectivity
+            - door
+            - garage_door
+            - gas
+            - heat
+            - light
+            - lock
+            - moisture
+            - motion
+            - moving
+            - occupancy
+            - opening
+            - plug
+            - power
+            - presence
+            - problem
+            - running
+            - safety
+            - smoke
+            - sound
+            - tamper
+            - update
+            - vibration
+            - window
+            - apparent_power
+            - aqi
+            - area
+            - atmospheric_pressure
+            - battery
+            - blood_glucose_concentration
+            - carbon_dioxide
+            - carbon_monoxide
+            - current
+            - data_rate
+            - data_size
+            - date
+            - distance
+            - duration
+            - energy
+            - energy_distance
+            - energy_storage
+            - enum
+            - frequency
+            - gas
+            - humidity
+            - illuminance
+            - irradiance
+            - moisture
+            - monetary
+            - nitrogen_dioxide
+            - nitrogen_monoxide
+            - nitrous_oxide
+            - ozone
+            - ph
+            - pm1
+            - pm25
+            - pm10
+            - power_factor
+            - power
+            - precipitation
+            - precipitation_intensity
+            - pressure
+            - reactive_power
+            - signal_strength
+            - sound_pressure
+            - speed
+            - sulphur_dioxide
+            - temperature
+            - timestamp
+            - volatile_organic_compounds
+            - volatile_organic_compounds_parts
+            - voltage
+            - volume
+            - volume_flow_rate
+            - volume_storage
+            - water
+            - weight
+            - wind_direction
+            - wind_speed
+          example: temperature
+        icon:
+          description: 'Must be prefixed with mdi:. If not provided, default value is mdi:cellphone.'
+          type: string
+          example: 'mdi:thermometer'
+        name:
+          description: 'The name of the sensor.'
+          type: string
+          example: 'Tablet 1 Telemetry'
+        state:
+          description: 'The state of the sensor.'
+          example: 22.5
+          oneOf:
+            -
+              type: boolean
+            -
+              type: number
+            -
+              type: integer
+            -
+              type: string
+        type:
+          description: 'The type of the sensor. Must be one of binary_sensor or sensor.'
+          type: string
+          enum:
+            - binary_sensor
+            - sensor
+          example: sensor
+        unique_id:
+          description: "An identifier unique to this installation of your app. Usually best when it's a safe version of the sensor name."
+          type: string
+          example: living_room_temperature
+        unit_of_measurement:
+          description: 'The unit of measurement for the sensor.'
+          type: string
+          example: °C
+        state_class:
+          description: "The state class of the entity (sensors only). - `measurement`: Represents a present-time measurement (e.g., temperature, humidity, power usage). - `total`: Represents a total amount that can both increase and decrease (e.g., net energy meter). - `total_increasing`: Represents a monotonically increasing total that periodically resets (e.g., daily gas consumption).\n"
+          type: string
+          enum:
+            - measurement
+            - total
+            - total_increasing
+          example: measurement
+        entity_category:
+          description: 'The entity category of the entity.'
+          type: string
+        disabled:
+          description: 'If the entity should be enabled or disabled.'
+          type: boolean
+      type: object
+    SensorState:
+      required:
+        - state
+        - type
+        - unique_id
+      properties:
+        attributes:
+          description: 'Attributes to attach to the sensor'
+          type: object
+        icon:
+          description: 'Must be prefixed with mdi:. If not provided, default value is mdi:cellphone.'
+          type: string
+          example: 'mdi:thermometer'
+        state:
+          description: 'The state of the sensor'
+          example: 22.5
+          oneOf:
+            -
+              type: boolean
+            -
+              type: number
+            -
+              type: integer
+            -
+              type: string
+        type:
+          description: 'The type of the sensor. Must be one of binary_sensor or sensor.'
+          type: string
+          enum:
+            - binary_sensor
+            - sensor
+          example: sensor
+        unique_id:
+          description: "An identifier unique to this installation of your app. Usually best when it's a safe version of the sensor name."
+          type: string
+          example: living_room_temperature
+      type: object
+    DeviceCommunicationSecret:
+      required:
+        - secret
+      properties:
+        secret:
+          description: 'A secret key for the device.'
+          type: string
+          example: 019566ed-09f4-73c0-834e-824092b3cffd
+      type: object
+    Device:
+      required:
+        - deviceUid
+        - deviceModel
+        - deviceName
+      properties:
+        deviceUid:
+          description: 'A unique identifier for the device.'
+          type: string
+          example: 1c310dab5cb53942
+        deviceModel:
+          description: 'A unique identifier for a specific type of device.'
+          type: string
+          example: b1
+        deviceName:
+          description: 'The name of the device.'
+          type: string
+          example: 'Tablet #id 1c310dab5cb53942'
+        manufacturer:
+          description: 'The manufacturer of the device.'
+          type: string
+          example: lunr.tech
+        osVersion:
+          description: 'The version of the operating system.'
+          type: string
+          example: 'Android 14'
+        supportsEncryption:
+          description: 'Indicates whether the device supports encryption.'
+          type: boolean
+          example: true
+        appData:
+          description: 'Additional application data related to the device.'
+          type: object
+          example: []
+      type: object
+    PolicyReportApp:
+      required:
+        - version
+        - package
+        - versionCode
+      properties:
+        version:
+          description: 'The version of the application.'
+          type: string
+          example: 3.6.3
+        package:
+          description: 'The package name of the application.'
+          type: string
+          example: org.videolan.vlc
+        versionCode:
+          description: 'The version code of the application.'
+          type: integer
+          example: 13060309
+      type: object
+    PolicyReport:
+      required:
+        - hardware
+        - deviceSettings
+        - apps
+        - os
+      properties:
+        hardware:
+          description: 'A list of hardware components (currently empty).'
+          type: array
+          items:
+            type: object
+          example: []
+        deviceSettings:
+          description: 'Settings related to the device.'
+          required:
+            - syncInterval
+          properties:
+            syncInterval:
+              description: 'The interval (in seconds) at which the device syncs.'
+              type: integer
+              example: 120
+          type: object
+        apps:
+          description: 'A list of installed applications.'
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyReportApp'
+        os:
+          description: 'Information about the operating system.'
+          required:
+            - version
+          properties:
+            version:
+              description: 'The operating system version.'
+              type: string
+              example: 1.1.4-20240821-B1
+          type: object
+      type: object
+    Response:
+      description: 'General JSON structure for response'
+      required:
+        - serverTime
+        - action
+        - code
+        - response
+      properties:
+        serverTime:
+          description: "The server's current timestamp."
+          type: string
+          format: date-time
+          example: '2025-01-13 10:55:58'
+        action:
+          description: 'The action attempted by the client.'
+          type: string
+          example: ping
+        code:
+          $ref: '#/components/schemas/ApiResponseCode'
+        response:
+          description: 'The response data, which can either be a string or a JSON object.'
+          oneOf:
+            -
+              type: string
+              example: pong
+            -
+              description: 'An object containing detailed response data.'
+              type: object
+              additionalProperties: true
+      type: object
+    ApiResponseCode:
+      description: "Full list of available response codes: - 200 - OK\n- 202 - Accepted\n- 503 - API server is on maintenance. Try again later please\n- 500 - Unknown error/response status\n- 400 - Request JSON is not valid and can not be evaluated\n- 406 - No such API function\n- 404 - There is no items for your search request. Try again later please\n- 403 - The requested resource can't be managed with your access rights\n- 401 - Auth token is not valid or token has no access permission for this action\n"
+      type: integer
+      format: int32
+      example: 200
+    OsResponse:
+      description: 'Schema for OS update file details.'
+      required:
+        - file
+        - md5
+        - version
+        - revision
+      properties:
+        file:
+          description: 'URL to download the OS update file.'
+          type: string
+          format: uri
+          example: 'https://ce.lcc.sh/storage/os/os-b1-v-1-1-4-20240821-B1-r-1-WJdBA8.zip'
+        md5:
+          description: 'MD5 checksum for file verification.'
+          type: string
+          example: 894a7d5e3250e72cf1808e987fffeb45
+        version:
+          description: 'The OS version for the update.'
+          type: string
+          example: 1.1.4-20240821-B1
+        revision:
+          description: 'The revision number of the OS update.'
+          type: string
+          example: '7'
+        size:
+          description: 'Os build file size'
+          type: integer
+          example: 1073741824
+      type: object
+    ConfigOsResponse:
+      description: 'Schema for OS configuration and update information.'
+      required:
+        - deviceModel
+        - version
+        - revision
+        - size
+        - buildUrl
+        - buildStatus
+      properties:
+        deviceModel:
+          description: 'The device model identifier.'
+          type: string
+          example: b1
+        version:
+          description: 'The OS version string including build date and device model.'
+          type: string
+          example: 1.1.4-20240821-B1
+          nullable: true
+        revision:
+          description: 'The revision number of the OS update.'
+          type: integer
+          example: 2
+          nullable: true
+        size:
+          description: 'Size of the OS build file in bytes.'
+          type: integer
+          example: 1073741824
+          nullable: true
+        changeLog:
+          description: 'Detailed information about bug fixes and changes in this version.'
+          type: string
+          example: 'Bug fixes:Videos captured with EIS enabled getting damage;Always on Display rules app crashing when changed'
+          nullable: true
+        buildUrl:
+          description: 'URL to download the OS build.'
+          type: string
+          format: uri
+          example: 'https://ce.lcc.sh/api/v1/os?deviceModel=b1&version=1.1.4-20240821-B1&currentOsVersion='
+        buildStatus:
+          description: "Current status of the build, indicating if it's the latest available."
+          type: string
+          enum:
+            - latest
+            - stock
+          example: latest
+      type: object
+    ApiAction:
+      description: 'Schema for action details.'
+      required:
+        - action
+      properties:
+        action:
+          description: 'The action to be performed.'
+          type: string
+          enum:
+            - os
+            - forceSync
+            - config
+            - wipe
+          example: wipe
+        details:
+          description: 'Optional object that provides additional information depending on the action.'
+          type: object
+          example:
+            target: internal
+      type: object
+    ApkObject:
+      description: 'Schema for an APK object.'
+      required:
+        - details
+        - version
+        - package
+        - fileType
+        - size
+        - fileMd5
+        - minSdkLevel
+        - revision
+        - versionCode
+        - trustLevel
+        - trustInfo
+        - file
+      properties:
+        details:
+          description: 'Detailed information about the application.'
+          required:
+            - name
+            - author
+            - description
+            - category
+            - originalRating
+            - images
+            - icon
+          properties:
+            name:
+              description: 'The name of the app.'
+              type: string
+              example: 'Spond - Sports Team Management'
+            author:
+              description: 'Author of the APK file.'
+              type: string
+              example: 'Spond AS'
+            description:
+              description: 'Description of the APK file.'
+              type: string
+              example: 'Spond makes it easy to organize groups for either children or adults, and you can invite to events, share posts and pictures.'
+            category:
+              description: 'Category of the app.'
+              type: string
+              enum:
+                - UNKNOWN
+                - COMMUNICATION
+                - BUSINESS
+                - TOOLS
+                - FINANCE
+                - PERSONALIZATION
+                - PRODUCTIVITY
+                - ENTERTAINMENT
+                - ART_AND_DESIGN
+                - AUTO_AND_VEHICLES
+                - BEAUTY
+                - BOOKS_AND_REFERENCE
+                - COMICS
+                - DATING
+                - EDUCATION
+                - EVENTS
+                - FOOD_AND_DRINK
+                - PARENTING
+                - LIFESTYLE
+                - MEDICAL
+                - PHOTOGRAPHY
+                - SHOPPING
+                - SOCIAL
+                - SPORTS
+                - VIDEO
+                - VIDEO_PLAYERS
+                - WEATHER
+                - PLAYERS_AND_EDITORS
+                - HEALTH_AND_FITNESS
+                - MUSIC_AND_AUDIO
+                - TRAVEL_AND_LOCAL
+                - HOUSE_AND_HOME
+                - LIBRARIES_AND_DEMO
+                - MAPS_AND_NAVIGATION
+                - NEWS_AND_MAGAZINES
+                - GAME_SPORTS
+                - GAME_ACTION
+                - GAME_ADVENTURE
+                - GAME_ARCADE
+                - GAME_BOARD
+                - GAME_CARD
+                - GAME_CASINO
+                - GAME_CASUAL
+                - GAME_EDUCATIONAL
+                - GAME_MUSIC
+                - GAME_PUZZLE
+                - GAME_RACING
+                - GAME_SIMULATION
+                - GAME_STRATEGY
+                - GAME_TRIVIA
+                - GAME_WORD
+                - GAME_ROLE_PLAYING
+              example: Sports
+            originalRating:
+              description: 'Rating of the APK file.'
+              type: string
+              example: '4.5'
+            contentRating:
+              description: 'The content rating of the application.'
+              type: string
+              enum:
+                - EVERYONE
+                - 'EVERYONE 10+'
+                - TEEN
+                - MATURE
+                - 'MATURE 17+'
+                - ADULTS_ONLY
+                - PEGI3
+                - PEGI7
+                - PEGI12
+                - PEGI16
+                - PEGI18
+                - 'All ages'
+                - USK6
+                - USK12
+                - USK16
+                - USK18
+                - General
+                - 'Parental Guidance'
+                - Mature
+                - Restricted
+                - 'Restricted to 15+'
+                - 'Restricted to 18+'
+                - 'For all'
+                - 'Rated 12+'
+                - 'Rated 15+'
+                - 'Rated 18+'
+                - 'Rated for 3 +'
+                - 'Rated for 7 +'
+                - 'Rated for 12 +'
+                - 'Rated for 16 +'
+                - 'Rated for 18 +'
+              example: EVERYONE
+            images:
+              type: array
+              items:
+                description: 'URL to an image of the app.'
+                type: string
+                format: uri
+              example:
+                - 'https://ce.lcc.sh/storage/image/01957fc7-2b05-793d-9059-482715aad041/img-app-id-1-88aOqH.png'
+                - 'https://ce.lcc.sh/storage/image/01957fc7-2b05-793d-9059-482715aad041/img-app-id-1-Gqof90.png'
+            icon:
+              description: "URL to the app's icon."
+              type: string
+              format: uri
+              example: 'https://ce.lcc.sh/storage/icon/01957fc7-123c-7469-8073-913e07c4d4cb/icon-com-spond-spond-Gqof90.png'
+          type: object
+        version:
+          description: 'The version of the app.'
+          type: string
+          example: 4.38.0
+        package:
+          description: 'The package name of the app.'
+          type: string
+          example: com.spond.spond
+        fileType:
+          description: "The file type of the APK represented as an integer code.\n- 1: APK - Standard Android Package file\n- 2: XAPK - Extended Android Package that may include additional resources\n- 3: ZIP - ZIP archive containing the application package\n"
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+          example: 3
+        size:
+          description: 'The size of the APK file in bytes.'
+          type: integer
+          example: 53972784
+        fileMd5:
+          description: 'MD5 checksum of the APK file for verification.'
+          type: string
+          example: 6397cbe27bca7a6a29d65a6bb9c0282f
+        changeLog:
+          description: 'Change log of the APK file.'
+          type: string
+          example: ''
+        minSdkLevel:
+          description: 'Minimum SDK level required to run the app.'
+          type: integer
+          example: 24
+        revision:
+          description: 'Revision number of the APK.'
+          type: integer
+          example: 2
+        versionCode:
+          description: 'The version code of the app.'
+          type: integer
+          example: 2243
+        trustLevel:
+          description: "Trust level of the APK file.\n- 0: TRUST_UNKNOWN - Unknown trust status\n- 1: TRUST_UNTRUSTED - Untrusted application\n- 2: TRUST_SLIGHTLY - Slightly trusted application\n- 3: TRUST_FULL - Fully trusted application\n"
+          type: integer
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+          example: 2
+        trustInfo:
+          description: 'Trust information for the APK.'
+          required:
+            - signedBy
+            - signerCertificate
+            - schema
+            - existInPlayMarket
+            - isSigned
+          properties:
+            signedBy:
+              description: 'Certificate authority that signed the APK.'
+              type: string
+              example: 'CN=Spond AS, OU=Spond AS, O=Spond AS, L=Oslo, ST=Unknown, C=NO'
+            signerCertificate:
+              description: "Signer's certificate for the APK file."
+              type: string
+              example: BE73CDA386148C7CB0490ABC448FD6E6DE47362070227C296D028830ED81DB3B
+            schema:
+              description: 'Version of the trust information schema.'
+              type: string
+              example: v3
+            existInPlayMarket:
+              description: 'Indicates if the APK exists in Play Market.'
+              type: boolean
+              example: true
+            isSigned:
+              description: 'Indicates if the APK file is signed.'
+              type: boolean
+              example: true
+          type: object
+        file:
+          description: 'URL to download the APK file.'
+          type: string
+          format: uri
+          example: 'https://ce.lcc.sh/storage/apk/01957fc6-9b9d-79c6-84bc-b3aa5f5c372c/app-com-spond-spond-v-4-38-0-wPLyh3.zip'
+      type: object
+    WhiteLabel:
+      description: 'Schema for white label settings.'
+      required:
+        - status
+        - launcherBackground
+        - bootLogoFlash
+      properties:
+        status:
+          description: 'Status of the white label settings.'
+          type: boolean
+          example: true
+        launcherBackground:
+          description: 'URL to the background image for the launcher.'
+          type: string
+          format: uri
+          example: 'https://ce.lcc.sh/storage/wl/wl-01957fb6-fd42-7fd6-a59d-a19b8b686ac4-20250315-Xocm0l.jpg'
+          nullable: true
+        launcherBackgroundMd5:
+          description: 'MD5 checksum of the launcher background image.'
+          type: string
+          example: 17579a25f7fa179ab8e42713bfc4078f
+          nullable: true
+        bootLogoFlash:
+          description: 'URL to the boot logo flash for the device.'
+          type: string
+          format: uri
+          example: 'https://ce.lcc.sh/storage/wl/wl-01957fb6-fd42-7fd6-a59d-a19b8b686ac4-20250315-qAf6pc.zip'
+          nullable: true
+        bootLogoFlashMd5:
+          description: 'MD5 checksum of the boot logo flash image.'
+          type: string
+          example: 17579a25f7fa179ab8e42713bfc4078f
+          nullable: true
+      type: object
+    DeviceSettings:
+      description: 'Schema for device settings response.'
+      required:
+        - syncInterval
+      properties:
+        syncInterval:
+          description: 'The interval in seconds between synchronization events.'
+          type: integer
+          example: 14400
+      type: object
+    DeviceConfiguration:
+      description: 'Schema for the device configuration.'
+      required:
+        - mqttSubscriptionKey
+        - actions
+        - hardware
+        - deviceSettings
+        - apps
+        - os
+        - whiteLabel
+      properties:
+        mqttSubscriptionKey:
+          description: 'The MQTT subscription key for actions.'
+          type: string
+          example: actions.b1.01958018-6241-76fd-b54c-bc9a9069f666
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiAction'
+        hardware:
+          description: 'List of Device sensors with their state: true|false. '
+          type: object
+          example: []
+        deviceSettings:
+          $ref: '#/components/schemas/DeviceSettings'
+        apps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApkObject'
+        os:
+          $ref: '#/components/schemas/ConfigOsResponse'
+        whiteLabel:
+          $ref: '#/components/schemas/WhiteLabel'
+      type: object
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      name: X-Auth-Token
+      in: header
+tags:
+  -
+    name: Updates
+    description: "API calls related to retrieving the operating system version and updates for a device. These endpoints provide JSON payloads containing details about the current OS version, available updates, and any relevant metadata necessary for keeping the device's software up to date."
+  -
+    name: Synchronization
+    description: 'API calls that facilitate connecting a device to the management platform. These endpoints provide JSON payloads containing the latest updates, synchronization settings, and configurations required to ensure seamless integration with the LCC (Lifecycle Controller). This allows devices to stay up to date and properly aligned with platform policies.'
+  -
+    name: Service
+    description: 'API calls related to retrieving various device statistics, diagnostics, and development insights. These endpoints provide functionality for pushing bug reports, fetching the current device configuration, performing network ping tests, and executing other service-related operations. This ensures efficient monitoring, troubleshooting, and maintenance of the device.'
+  -
+    name: Sensors
+    description: "API calls related to retrieving sensor data from the device. These endpoints provide JSON payloads containing sensor data, such as temperature, humidity, and other environmental metrics. This allows for real-time monitoring and analysis of the device's physical environment, ensuring optimal performance and reliability."
+

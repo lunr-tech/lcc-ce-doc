@@ -1,0 +1,46 @@
+services:
+  nanomq:
+    build: ./nanomq
+    container_name: nanomq
+    restart: always
+#    environment:
+#      - LCC_ACCESS_TOKEN=5Qs46lC0C1TljXJYivmjXOvY
+#      - DEVICE_ACCESS_TOKEN=vOZWSQ9rIwWi
+    ports:
+      - "1884:1884"
+    networks:
+      - local-net
+
+  api:
+    build: ./demo-api
+    container_name: api
+    restart: always
+    depends_on:
+      - nanomq
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./demo-api:/app
+    networks:
+      - local-net
+
+  ui:
+    build: ./rule-engine
+    container_name: ui
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./rule-engine:/app
+    networks:
+      - local-net
+
+networks:
+  local-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.34.0/24

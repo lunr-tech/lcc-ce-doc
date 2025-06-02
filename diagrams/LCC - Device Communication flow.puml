@@ -1,0 +1,38 @@
+@startuml
+actor MobileDevice
+participant "MQTT Broker" as Broker
+participant "MDM Event Listener\n(Microservice)" as MDMListener
+participant "Message Queue/Bus" as QueueBus
+participant "MDM Command Orchestrator(s)\n(Microservice)" as CommandOrchestrator
+participant "MDM Command Dispatcher\n(Microservice)" as MDMDispatcher
+
+== Subscription ==
+MobileDevice -> Broker: CONNECT
+MobileDevice -> Broker: SUBSCRIBE\n"lcc/device/uid/{deviceUid}"
+
+== Device Publishes Event ==
+MobileDevice -> Broker: PUBLISH\nTopic: "lcc/device/events"\nPayload:
+note right
+{
+  "type": "[EVENT_TYPE]",
+  "token": "[ACCESS_TOKEN]",
+  "deviceUid": "[DEVICE_UID]",
+  "deviceModel": "[DEVICE_MODEL]",
+  "message": {
+     // Event-specific data
+  }
+}
+end note
+
+Broker -> MDMListener: FORWARD MESSAGE\nfrom "lcc/device/events"
+MDMListener -> MDMListener: Validate token & process event
+MDMListener -> QueueBus: PUBLISH Validated Event
+
+== MDM Processes Event & Sends Command ==
+QueueBus -> CommandOrchestrator: CONSUME Validated Event
+CommandOrchestrator -> CommandOrchestrator: Determine & Orchestrate Commands
+CommandOrchestrator -> MDMDispatcher: SEND Command(s)\nfor device "{deviceUid}"
+MDMDispatcher -> Broker: PUBLISH\nTopic: "lcc/device/uid/{deviceUid}"\nPayload: JSON command
+Broker -> MobileDevice: DELIVER MESSAGE
+
+@enduml

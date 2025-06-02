@@ -1,0 +1,4 @@
+.idea
+tmp
+diagrams/.$LCC*
+*node_modules

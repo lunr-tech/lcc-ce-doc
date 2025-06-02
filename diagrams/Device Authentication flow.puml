@@ -1,0 +1,84 @@
+@startuml
+skinparam DefaultFontName Arial
+skinparam roundcorner 20
+skinparam handwritten false
+skinparam shadowing false
+skinparam BackgroundColor white
+skinparam ParticipantBackgroundColor #FEFECE
+skinparam LifeLineBackgroundColor #FEFECE
+skinparam SequenceGroupBodyBackgroundColor #EEEEEE
+skinparam SequenceGroupBorderColor #AAAAAAA
+skinparam NoteBorderColor  #D4D4D4
+skinparam NoteBackgroundColor  #FFFACD
+
+skinparam sequence {
+    ArrowColor #2196F3
+    ActorBorderColor #999999
+    LifeLineBorderColor #999999
+    LifeLineBackgroundColor #DDDDDD
+
+    ParticipantBorderColor #2196F3
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantFontColor black
+
+    ActorBackgroundColor white
+    ActorFontColor black
+}
+
+actor "Admin" as admin
+participant "Mobile Device" as device
+participant "MDM API" as api
+participant "MQTT Broker" as mqtt
+database "MDM Database" as db
+
+== Enrollment Phase ==
+
+device -> api : Enrollment request with deviceuid & identifiers
+api -> db : Store device information (status: unauthenticated)
+api -> api : Generate initial JWT access token\nand refresh token
+api -> device : Return tokens
+note right of device: Device stores tokens securely
+
+== Admin Approval Phase ==
+
+admin -> api : View unauthenticated devices
+api -> db : Query unauthenticated devices
+db -> api : Return device list
+api -> admin : Display devices pending approval
+admin -> api : Approve device
+api -> db : Update device status to approved
+note right of db: Refresh token now valid for use
+
+== Authentication & Usage Phase ==
+
+device -> api : API request with access token
+api -> api : Validate access token
+api -> device : API response
+
+device -> mqtt : Connect with access token
+mqtt -> api : Validate token
+api -> mqtt : Token valid
+mqtt -> device : Connection established
+
+== Token Refresh Phase ==
+
+note over device: Access token expires
+
+device -> api : Request new access token using refresh token
+api -> db : Validate refresh token & check device status
+db -> api : Token valid, device approved
+api -> api : Generate new access token
+api -> device : Return new access token
+
+== Token Revocation ==
+
+admin -> api : Revoke device access
+api -> db : Invalidate refresh token
+note right of db: Device can no longer refresh tokens
+
+device -> api : Attempt to refresh token
+api -> db : Check token validity
+db -> api : Token invalid
+api -> device : Authentication error
+
+@enduml

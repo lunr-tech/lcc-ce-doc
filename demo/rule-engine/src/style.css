@@ -1,0 +1,22 @@
+:root {
+  --primary-font: sans-serif;
+  --neutral-background: #f0f0f0;
+  --accent-color: #4CAF50;
+  --text-on-accent: white;
+  --spacing-unit: 8px;
+  --border-radius-small: 4px;
+  --icon-size: 20px;
+}
+
+body{
+  margin: 0;
+  padding: 0;
+}
+
+.blockly-app {
+  font-family: var(--primary-font);
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex; /* Enable flexbox for horizontal layout */
+  height: 100vh;
+}
